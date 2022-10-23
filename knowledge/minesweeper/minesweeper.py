@@ -1,3 +1,4 @@
+from ast import Or
 import itertools
 import random
 
@@ -105,28 +106,37 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        raise NotImplementedError
+        if len(self.cells) == self.count:
+            return set(self.cells)
+        else:
+            return set()
+        
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        raise NotImplementedError
+        if self.count == 0:
+            return set(self.cells)
+        else:
+            return set()
 
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        raise NotImplementedError
+        if cell in self.cells:
+            self.cells.remove(cell)
+            self.count-=1
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        raise NotImplementedError
-
+        if cell in self.cells:
+            self.cells.remove(cell)
 
 class MinesweeperAI():
     """
@@ -145,6 +155,7 @@ class MinesweeperAI():
         # Keep track of cells known to be safe or mines
         self.mines = set()
         self.safes = set()
+        self.allCells = self.init_all_cells()
 
         # List of sentences about the game known to be true
         self.knowledge = []
@@ -175,6 +186,7 @@ class MinesweeperAI():
         This function should:
             1) mark the cell as a move that has been made
             2) mark the cell as safe
+            
             3) add a new sentence to the AI's knowledge base
                based on the value of `cell` and `count`
             4) mark any additional cells as safe or as mines
@@ -182,7 +194,11 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        raise NotImplementedError
+        self.moves_made.add(cell)
+        #mark safe
+        self.mark_safe (cell)
+
+        self.update_knowledge_base (cell, count)
 
     def make_safe_move(self):
         """
@@ -193,7 +209,12 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        safeMovesAvail = self.safes.difference(self.moves_made)
+
+        if len(safeMovesAvail) > 0:
+            return safeMovesAvail.pop()
+        else:
+            return
 
     def make_random_move(self):
         """
@@ -202,4 +223,133 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        availableCells = self.allCells
+        availableCells.difference_update (self.moves_made)
+        availableCells.difference_update (self.mines)
+        indexToReturn = 0
+
+        # TODO: would be nice - prefer empty cell surrounded by 1s than one surrounded by 3s
+        return availableCells.pop()
+
+    # new methods added by jason
+    def update_knowledge_base (self, cell, count):
+        """
+            1) add a new sentence to the AI's knowledge base
+               based on the value of `cell` and `count`
+            2) mark any additional cells as safe or as mines
+               if it can be concluded based on the AI's knowledge base
+            3) add any new sentences to the AI's knowledge base
+               if they can be inferred from existing knowledge
+        """
+        unknownCells = self.get_unknown_cells (cell, count)
+
+        newSentence = Sentence (unknownCells, count)
+
+
+        # iterate through knowledge - end to front append at end
+        numSentences = len(self.knowledge)
+        index = numSentences - 1
+        while index >= 0:
+            currSentence = self.knowledge[index]
+            # check if num cells matches count - if so mark them all as mines
+            if len(currSentence.cells) == currSentence.count:
+                j = 0
+                while j < currSentence.count:
+                    self.mark_mine(currSentence.cells.pop())
+                    j += 1
+            # check if count = 0, mark them all as safe
+            elif currSentence.count == 0:
+                l = 0
+                while l < len(currSentence.cells):
+                    self.mark_safe(currSentence.cells.pop())
+                    l += 1
+            # check if new sentence is subset of current sentence, if so add new sentence to knowledge base
+            if len(currSentence.cells) != 0 and len(newSentence.cells) != 0:
+                if newSentence.cells.issuperset(currSentence.cells):
+                    difference = Sentence(newSentence.cells.difference(currSentence.cells), newSentence.count-currSentence.count)
+                    self.knowledge.append(difference)
+                elif currSentence.cells.issuperset(newSentence.cells):
+                    difference = Sentence(currSentence.cells.difference(newSentence.cells), currSentence.count-newSentence.count)
+                    self.knowledge.append(difference)
+
+            index -= 1
+
+        # lastly append new sentence
+        if newSentence.count == 0:
+            k=0
+            while k < len(newSentence.cells):
+                self.mark_safe(newSentence.cells.pop())
+                k += 1
+        if len(newSentence.cells) > 0:
+            self.knowledge.append(newSentence)
+
+    def get_unknown_cells (self, cell, count):
+        unknownCells = self.get_surrounding_cells (cell, count)
+        """
+        1) omit safe cells - remove self.safes
+        2) omit mines and deduct from count - remove self.mines
+        """
+
+        unknownCells.difference (self.safes)
+        unknownCells.difference (self.mines)
+        count = len(unknownCells)
+        return unknownCells
+
+    def get_surrounding_cells (self, cell, count):
+        # get max. 8 surrounding cells minIndex = 0 
+        # maxIndex = self.height and self.width
+        # 
+        # 
+        #init count to zero
+        count = 0
+        surroundingCells = set()
+        row = cell[0]
+        col = cell[1]
+
+        if row-1 < 0 :
+            minRowIndex = 0
+        else: 
+            minRowIndex = row-1
+
+        if col-1 < 0:
+            minColIndex = 0
+        else :
+            minColIndex = col-1
+
+
+        # in case game is not square use heigt for rows and width for cols
+        if row+1 <= self.height-1:
+            maxRowIndex = row+1
+        else:
+            maxRowIndex = self.height-1
+
+        if col+1 <= self.width-1:
+            maxColIndex = col+1
+        else:
+            maxColIndex = self.width-1
+
+        i = minRowIndex
+        while i <= maxRowIndex:
+            j = minColIndex
+            while j <= maxColIndex:
+                if i != row or j != col:
+                    surroundingCells.add ((i,j))
+                j += 1
+                count += 1
+            i += 1
+
+        return surroundingCells
+
+    def init_all_cells (self):
+
+        allCells = set()
+
+        i = 0
+        while i <= self.height-1:
+            j = 0
+            while j <= self.width-1:
+                allCells.add ((i,j))
+                j += 1
+            i += 1
+
+        return allCells
