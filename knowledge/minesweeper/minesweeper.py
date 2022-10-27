@@ -252,15 +252,18 @@ class MinesweeperAI():
         while index >= 0:
             currSentence = self.knowledge[index]
             # check if num cells matches count - if so mark them all as mines
-            if len(currSentence.cells) == currSentence.count:
+            numCells = len(currSentence.cells)
+            if numCells == currSentence.count:
                 j = 0
-                while j < currSentence.count:
+                while j < numCells:
                     self.mark_mine(currSentence.cells.pop())
                     j += 1
+                currSentence.count = 0
             # check if count = 0, mark them all as safe
             elif currSentence.count == 0:
                 l = 0
-                while l < len(currSentence.cells):
+                numCells = len(currSentence.cells)
+                while l < numCells:
                     self.mark_safe(currSentence.cells.pop())
                     l += 1
             # check if new sentence is subset of current sentence, if so add new sentence to knowledge base
@@ -277,7 +280,8 @@ class MinesweeperAI():
         # lastly append new sentence
         if newSentence.count == 0:
             k=0
-            while k < len(newSentence.cells):
+            numCells = len(newSentence.cells)
+            while k < numCells:
                 self.mark_safe(newSentence.cells.pop())
                 k += 1
         if len(newSentence.cells) > 0:
