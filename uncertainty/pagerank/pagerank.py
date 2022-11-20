@@ -57,7 +57,35 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+
+    probDist = dict()
+
+    numPages = len(corpus)
+    randProbAllPages = 1/numPages
+    weightedProbAllPages = (1-damping_factor)*randProbAllPages
+
+    linkedPages = corpus[page]
+    numLinkedPages = len(linkedPages)
+    probLinkedPages = 1/numLinkedPages
+    weightedProbLinkedPages = damping_factor*probLinkedPages
+
+    pdIter = iter(corpus)
+    totalProb = 0
+    epsilon=.001
+
+    for pdkey in pdIter:
+        #print (corpus[corpkey])
+        if pdkey in linkedPages:
+            probDist[pdkey] = weightedProbAllPages + weightedProbLinkedPages
+        else:
+            probDist[pdkey] = weightedProbAllPages
+        totalProb += probDist[pdkey]
+
+    if totalProb < 1 - epsilon:
+        print ("total probability is " + totalProb + "Probabilities should add up to 1.0!")
+
+   # raise NotImplementedErrorv
+    return probDist
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,8 +97,29 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    choiceLst = random.choices(list(corpus.keys()))
+    page = choiceLst[0]
 
+    estPRVals = dict.fromkeys(iter(corpus), 0)
+
+    for i in range (n):
+        pd = transition_model (corpus, page, damping_factor)
+        # get new page value using transition model
+        choiceLst = random.choices(list(pd.keys()), list(pd.values()))
+        page=choiceLst[0]
+        estPRVals[page]+=1/n
+
+    return estPRVals
+
+def thresholdMet(convDict, convThreshold):
+
+    cdIter = iter(convDict)
+
+    for cdKey in cdIter:
+        if (convDict[cdKey] > convThreshold):
+            return False
+
+    return True
 
 def iterate_pagerank(corpus, damping_factor):
     """
@@ -81,7 +130,29 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    numKeys=len(corpus)
+    # pr due to random surf
+    estPRVals = dict.fromkeys(iter(corpus), (1-damping_factor)/numKeys)
+    # pr due to link
+
+    convThreshold = .001
+    convDict = dict.fromkeys(iter(corpus),2*convThreshold)
+    oldEst = dict()
+    oldEst.update(estPRVals)
+    while (False == thresholdMet (convDict,convThreshold)):
+        corpIter = iter(corpus)
+        newEst = dict()
+        newEst.update(oldEst)
+        for corpKey in corpIter:
+            oldValue = oldEst[corpKey]
+            numLinks = len(corpus[corpKey])
+            if (numLinks > 0):
+                for linkPage in corpus[corpKey]:
+                    newEst[corpKey] += damping_factor*oldEst[linkPage]/numLinks
+                convDict[corpKey] = newEst[corpKey]-oldValue
+        oldEst.update(newEst)
+
+    return oldEst
 
 
 if __name__ == "__main__":
