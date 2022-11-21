@@ -1,16 +1,32 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
+  "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Python: corpus 0",
             "type": "python",
             "request": "launch",
             "program": "${file}",
+            "args": ["corpus0"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: corpus 1",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": ["corpus1"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: corpus 2",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": ["corpus2"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
     ]
-}
+    }
