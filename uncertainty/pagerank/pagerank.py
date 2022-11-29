@@ -66,6 +66,10 @@ def transition_model(corpus, page, damping_factor):
 
     linkedPages = corpus[page]
     numLinkedPages = len(linkedPages)
+
+    # if no linked pages assume ALL linked pages to avoid divide by zero error
+    if numLinkedPages == 0:
+        numLinkedPages = numPages
     probLinkedPages = 1/numLinkedPages
     weightedProbLinkedPages = damping_factor*probLinkedPages
 
@@ -82,7 +86,7 @@ def transition_model(corpus, page, damping_factor):
         totalProb += probDist[pdkey]
 
     if totalProb < 1 - epsilon:
-        print ("total probability is " + totalProb + "Probabilities should add up to 1.0!")
+        print (f"total probability is {totalProb} Probabilities should add up to 1.0!")
 
    # raise NotImplementedErrorv
     return probDist
@@ -111,15 +115,31 @@ def sample_pagerank(corpus, damping_factor, n):
 
     return estPRVals
 
-def thresholdMet(convDict, convThreshold):
+def thresholdMet(currentPageRank, newPageRank,convThreshold):
 
-    cdIter = iter(convDict)
+    cdIter = iter(currentPageRank)
 
     for cdKey in cdIter:
-        if (convDict[cdKey] > convThreshold):
+        if (abs(currentPageRank[cdKey] - newPageRank[cdKey]) > convThreshold):
             return False
 
     return True
+
+def PR(convThreshold, currentPageRank, corpus, damping_factor):
+    numKeys=len(corpus)
+    newPageRank = dict.fromkeys(iter(corpus), (1-damping_factor)/numKeys)
+   
+    corpIter = iter(corpus)
+    for corpKey in corpIter:
+        numLinks = len(corpus[corpKey])
+        if (numLinks > 0):
+            for linkPage in corpus[corpKey]:
+                newPageRank[corpKey] += damping_factor*currentPageRank[linkPage]/numLinks
+
+    if False == thresholdMet (currentPageRank, newPageRank,convThreshold):
+        return PR (convThreshold, newPageRank, corpus, damping_factor)
+    else:
+        return newPageRank
 
 def iterate_pagerank(corpus, damping_factor):
     """
@@ -131,28 +151,16 @@ def iterate_pagerank(corpus, damping_factor):
     PageRank values should sum to 1.
     """
     numKeys=len(corpus)
-    # pr due to random surf
+    # # pr due to random surf
     estPRVals = dict.fromkeys(iter(corpus), (1-damping_factor)/numKeys)
-    # pr due to link
+    # # pr due to link
 
     convThreshold = .001
-    convDict = dict.fromkeys(iter(corpus),2*convThreshold)
-    oldEst = dict()
-    oldEst.update(estPRVals)
-    while (False == thresholdMet (convDict,convThreshold)):
-        corpIter = iter(corpus)
-        newEst = dict()
-        newEst.update(oldEst)
-        for corpKey in corpIter:
-            oldValue = oldEst[corpKey]
-            numLinks = len(corpus[corpKey])
-            if (numLinks > 0):
-                for linkPage in corpus[corpKey]:
-                    newEst[corpKey] += damping_factor*oldEst[linkPage]/numLinks
-                convDict[corpKey] = newEst[corpKey]-oldValue
-        oldEst.update(newEst)
-
-    return oldEst
+    #convDict = dict.fromkeys(iter(corpus),2*convThreshold)
+    estPRVals = PR(convThreshold,estPRVals, corpus,damping_factor)
+    #shouldBeOne = sum(estPRVals.values())
+    #assert shouldBeOne == 1
+    return estPRVals
 
 
 if __name__ == "__main__":
