@@ -5,7 +5,7 @@ import sys
 
 DAMPING = 0.85
 SAMPLES = 10000
-
+EPSILON = .02
 
 def main():
     if len(sys.argv) != 2:
@@ -47,6 +47,12 @@ def crawl(directory):
 
     return pages
 
+def check_total_prob (totalProb):
+    if totalProb < 1 - EPSILON:
+        print (f"total probability is {totalProb} Probabilities should add up to 1.0!")
+        return False
+    else:
+        return True
 
 def transition_model(corpus, page, damping_factor):
     """
@@ -75,7 +81,6 @@ def transition_model(corpus, page, damping_factor):
 
     pdIter = iter(corpus)
     totalProb = 0
-    epsilon=.001
 
     for pdkey in pdIter:
         #print (corpus[corpkey])
@@ -85,8 +90,7 @@ def transition_model(corpus, page, damping_factor):
             probDist[pdkey] = weightedProbAllPages
         totalProb += probDist[pdkey]
 
-    if totalProb < 1 - epsilon:
-        print (f"total probability is {totalProb} Probabilities should add up to 1.0!")
+    check_total_prob (totalProb)
 
    # raise NotImplementedErrorv
     return probDist
@@ -120,7 +124,8 @@ def thresholdMet(currentPageRank, newPageRank,convThreshold):
     cdIter = iter(currentPageRank)
 
     for cdKey in cdIter:
-        if (abs(currentPageRank[cdKey] - newPageRank[cdKey]) > convThreshold):
+        diff = abs(currentPageRank[cdKey] - newPageRank[cdKey])
+        if (diff > convThreshold):
             return False
 
     return True
@@ -151,15 +156,15 @@ def iterate_pagerank(corpus, damping_factor):
     PageRank values should sum to 1.
     """
     numKeys=len(corpus)
-    # # pr due to random surf
+
+    # initial guess based on random surfing alone
     estPRVals = dict.fromkeys(iter(corpus), (1-damping_factor)/numKeys)
-    # # pr due to link
 
     convThreshold = .001
-    #convDict = dict.fromkeys(iter(corpus),2*convThreshold)
+
     estPRVals = PR(convThreshold,estPRVals, corpus,damping_factor)
-    #shouldBeOne = sum(estPRVals.values())
-    #assert shouldBeOne == 1
+    totalProb = sum(estPRVals.values())
+    check_total_prob (totalProb)
     return estPRVals
 
 
