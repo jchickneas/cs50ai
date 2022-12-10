@@ -119,9 +119,6 @@ def sample_pagerank(corpus, damping_factor, n):
 
     return estPRVals
 
-def getNumLinks (corpus, corpKey):
-    return len(corpus[corpKey]);
-
 def thresholdMet(currentPageRank, newPageRank,convThreshold):
 
     cdIter = iter(currentPageRank)
@@ -132,6 +129,9 @@ def thresholdMet(currentPageRank, newPageRank,convThreshold):
             return False
 
     return True
+
+def getNumLinks (corpus, corpKey):
+    return len(corpus[corpKey])
 
 def PR(convThreshold, currentPageRank, corpus, damping_factor):
     numKeys=len(corpus)
