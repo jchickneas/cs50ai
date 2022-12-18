@@ -47,7 +47,8 @@ def crawl(directory):
 
     return pages
 
-def check_total_prob (totalProb):
+def check_total_prob (probDist):
+    totalProb = sum(probDist.values())
     if totalProb < 1 - EPSILON:
         print (f"total probability is {totalProb} Probabilities should add up to 1.0!")
         return False
@@ -80,7 +81,6 @@ def transition_model(corpus, page, damping_factor):
     weightedProbLinkedPages = damping_factor*probLinkedPages
 
     pdIter = iter(corpus)
-    totalProb = 0
 
     for pdkey in pdIter:
         #print (corpus[corpkey])
@@ -88,11 +88,7 @@ def transition_model(corpus, page, damping_factor):
             probDist[pdkey] = weightedProbAllPages + weightedProbLinkedPages
         else:
             probDist[pdkey] = weightedProbAllPages
-        totalProb += probDist[pdkey]
 
-    check_total_prob (totalProb)
-
-   # raise NotImplementedErrorv
     return probDist
 
 
@@ -117,6 +113,7 @@ def sample_pagerank(corpus, damping_factor, n):
         page=choiceLst[0]
         estPRVals[page]+=1/n
 
+    check_total_prob (estPRVals)
     return estPRVals
 
 def thresholdMet(currentPageRank, newPageRank,convThreshold):
@@ -129,9 +126,22 @@ def thresholdMet(currentPageRank, newPageRank,convThreshold):
             return False
 
     return True
+def getNumLinksOnPage (corpus, i):
+    numLinks = 0
+    corpIter = iter(corpus)
+    for corpKey in corpIter:
+        linksTo = corpus.get(i)
+    return len(linksTo)
 
-def getNumLinks (corpus, corpKey):
-    return len(corpus[corpKey])
+def getPagesLinkingTo (corpus, keyToRank):
+    linkingToSet = set()
+    corpIter = iter(corpus)
+    for corpKey in corpIter:
+        linksTo = corpus.get(corpKey)
+        #print(linksTo)
+        if (keyToRank in linksTo):
+            linkingToSet.add(corpKey)
+    return linkingToSet
 
 def PR(convThreshold, currentPageRank, corpus, damping_factor):
     numKeys=len(corpus)
@@ -139,11 +149,14 @@ def PR(convThreshold, currentPageRank, corpus, damping_factor):
    
     corpIter = iter(corpus)
     for corpKey in corpIter:
-        numLinks = getNumLinks (corpus, corpKey)
+        linkingToSet = getPagesLinkingTo (corpus, corpKey)
 
-        if (numLinks > 0):
-            for linkPage in corpus[corpKey]:
+        if (len(linkingToSet) > 0):
+            for linkPage in linkingToSet:
+                numLinks = getNumLinksOnPage(corpus, linkPage)
                 newPageRank[corpKey] += damping_factor*currentPageRank[linkPage]/numLinks
+        else:
+            newPageRank[corpKey] += damping_factor*currentPageRank[linkPage]/numKeys
 
     if False == thresholdMet (currentPageRank, newPageRank,convThreshold):
         return PR (convThreshold, newPageRank, corpus, damping_factor)
@@ -162,13 +175,13 @@ def iterate_pagerank(corpus, damping_factor):
     numKeys=len(corpus)
 
     # initial guess based on random surfing alone
-    estPRVals = dict.fromkeys(iter(corpus), (1-damping_factor)/numKeys)
+    estPRVals = dict.fromkeys(iter(corpus), 1/numKeys)
 
     convThreshold = .001
 
     estPRVals = PR(convThreshold,estPRVals, corpus,damping_factor)
-    totalProb = sum(estPRVals.values())
-    check_total_prob (totalProb)
+
+    check_total_prob (estPRVals)
     return estPRVals
 
 
