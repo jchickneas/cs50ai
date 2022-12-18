@@ -47,13 +47,15 @@ def crawl(directory):
 
     return pages
 
-def check_total_prob (probDist):
+def check_total_prob (probDist, msg, doPrint):
     totalProb = sum(probDist.values())
     if totalProb < 1 - EPSILON:
-        print (f"total probability is {totalProb} Probabilities should add up to 1.0!")
-        return False
+        if (doPrint):
+            print (f"total probability for {msg} is {totalProb} Probabilities should add up to 1.0!")
+        weight = 1/totalProb
+        return False, weight
     else:
-        return True
+        return True,1
 
 def transition_model(corpus, page, damping_factor):
     """
@@ -113,7 +115,9 @@ def sample_pagerank(corpus, damping_factor, n):
         page=choiceLst[0]
         estPRVals[page]+=1/n
 
-    check_total_prob (estPRVals)
+    # should always add to one
+    check_total_prob (estPRVals, "Sampling", True)
+
     return estPRVals
 
 def thresholdMet(currentPageRank, newPageRank,convThreshold):
@@ -181,7 +185,13 @@ def iterate_pagerank(corpus, damping_factor):
 
     estPRVals = PR(convThreshold,estPRVals, corpus,damping_factor)
 
-    check_total_prob (estPRVals)
+    addsToOne, weight = check_total_prob (estPRVals, "Iteration", False)
+    if (addsToOne == False):
+        valsIter = iter(estPRVals)
+        for valkeys in valsIter:
+            estPRVals[valkeys] *= weight
+    
+    check_total_prob (estPRVals, "Iteration", True)
     return estPRVals
 
 
