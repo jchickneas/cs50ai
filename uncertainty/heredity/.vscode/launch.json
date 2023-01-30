@@ -28,7 +28,7 @@
             "request": "launch",
             "program": "${cwd}/heredity.py",
             "args": ["./data/family2.csv"],
-,            "console": "integratedTerminal",
+            "console": "integratedTerminal",
             "justMyCode": true
         },
       
