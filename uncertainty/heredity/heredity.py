@@ -128,9 +128,66 @@ def powerset(s):
     ]
 
 
+def get_no_genes (people, one_gene, two_genes):
+    # get all people remove one and two genes
+    allPeeps = people.keys()
+
+    remPeeps = allPeeps - one_gene
+    remPeeps = remPeeps - two_genes
+    return remPeeps
+
+def get_doesnt_have_trait (people, has_trait):
+    # get all people remove one and two genes
+    allPeeps = people.keys()
+
+    remPeeps = allPeeps - has_trait
+    return remPeeps
+
+def prob_no_genes(no_genes):
+
+    raise NotImplementedError
+
+def prob_one_gene(one_genes):
+
+
+    raise NotImplementedError
+
+def prob_two_genes(two_genes):
+
+    raise NotImplementedError
+
+def prob_has_trait(has_trait):
+
+    raise NotImplementedError
+
+
+def prob_doesnt_have_trait(doesnt_have_trait):
+
+    raise NotImplementedError
+
 def joint_probability(people, one_gene, two_genes, have_trait):
+
+    probability = dict()
+
+    no_genes = get_no_genes(people, one_gene, two_genes)
+
+    doesnt_have_trait=get_doesnt_have_trait(people, have_trait)
+
+    p0g = prob_no_genes(no_genes)
+
+    p1g = prob_one_gene(one_gene)
+
+    p2g = prob_two_genes(two_genes)
+
+    pht = prob_has_trait(have_trait)
+
+    pnt = prob_doesnt_have_trait(doesnt_have_trait)
+# TODO
+    #probability = dict("genes"=p0g, )
+
     """
     Compute and return a joint probability.
+
 
     The probability returned should be the probability that
         * everyone in set `one_gene` has one copy of the gene, and
@@ -139,7 +196,9 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+
+    return probability
+
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -149,7 +208,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+#    raise NotImplementedError
 
 
 def normalize(probabilities):
@@ -157,8 +216,23 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    # check
+    sum1 = probabilities["gene"][0] + probabilities["gene"][1] + probabilities["gene"][2]
+    if sum1 != 1.0:
+        ratio = 1/sum1
+        #scale each value by ratio
+        probabilities["gene"][0]*=ratio
+        probabilities["gene"][1]*=ratio
+        probabilities["gene"][2]*=ratio
 
+    sum2 = probabilities["trait"][0][True] + probabilities["trait"][0][False]
+
+    if sum2 != 1.0:
+        ratio2 = 1/sum2
+        #scale each value by ratio
+        probabilities["trait"][0][True]*=ratio2
+        probabilities["trait"][0][False]*=ratio2
 
 if __name__ == "__main__":
     main()
